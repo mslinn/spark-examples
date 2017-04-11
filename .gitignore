@@ -26,3 +26,7 @@ logs
 __MACOSX
 RUNNING_PID
 checkpoint
+data/
+*.parquet/
+spark-warehouse/
+
