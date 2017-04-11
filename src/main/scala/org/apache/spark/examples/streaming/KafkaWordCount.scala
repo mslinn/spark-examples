@@ -41,19 +41,23 @@ import org.apache.spark.streaming.kafka._
 object KafkaWordCount {
   def main(args: Array[String]) {
     if (args.length < 4) {
-      System.err.println("Usage: KafkaWordCount <zkQuorum> <group> <topics> <numThreads>")
+      System.err.println("Usage: KafkaWordCount <zkQuorum> <groupId> <topics> <numThreads>")
       System.exit(1)
     }
 
     StreamingExamples.setStreamingLogLevels()
 
-    val Array(zkQuorum, group, topics, numThreads) = args
+    val Array(zkQuorum, groupId, topics, numThreads) = args
     val sparkConf = new SparkConf().setAppName("KafkaWordCount").setMaster("local[2]")
     val ssc: StreamingContext = new StreamingContext(sparkConf, Seconds(2))
     ssc.checkpoint("checkpoint")
 
-    val topicMap: Map[String, Int] = topics.split(",").map((_, numThreads.toInt)).toMap
-    val lines: DStream[String] = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
+    val topicMap: Map[String, Int] =
+      topics
+        .split(",")
+        .map((_, numThreads.toInt)) // one partition per thread
+        .toMap
+    val lines: DStream[String] = KafkaUtils.createStream(ssc, zkQuorum, groupId, topicMap).map(_._2)
     val words: DStream[String] = lines.flatMap(_.split(" "))
     val wordCounts: DStream[(String, Long)] =
       words
