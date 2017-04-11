@@ -39,6 +39,8 @@ import org.apache.spark.streaming.kafka._
  *      my-consumer-group topic1,topic2 1`
  */
 object KafkaWordCount {
+  // This example does not fully comply with the checkpoint initialization described in the docs
+  // See http://spark.apache.org/docs/latest/streaming-programming-guide.html#how-to-configure-checkpointing
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println("Usage: KafkaWordCount <zkQuorum> <groupId> <topics> <numThreads>")
