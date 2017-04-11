@@ -14,7 +14,7 @@ clear
 # Each case below should be started in a separate console. Choose either 2a or 2b, 3a or 3b
 case "$1" in
   0)  # Throw away old events
-    rm -rf checkpoint
+    rm -rf checkpoint /tmp/zookeeper
 
     # Start Zookeeper
     $KHOME/bin/zookeeper-server-start.sh $KHOME/config/zookeeper.properties
@@ -58,7 +58,7 @@ case "$1" in
 
   3b)  # receive messages using Scala
     set -xv
-    $SBT "runMain org.apache.spark.examples.streaming.KafkaWordCount $KURL KafkaWordCount $TOPIC 1"
+    $SBT "runMain org.apache.spark.examples.streaming.KafkaWordCount $ZURL KafkaWordCount $TOPIC 1"
     set +xv
     ;;
 esac
