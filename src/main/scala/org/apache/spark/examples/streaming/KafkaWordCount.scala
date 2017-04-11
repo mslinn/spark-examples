@@ -66,7 +66,7 @@ object KafkaWordCount {
   }
 }
 
-// Produces some random words between 1 and 100.
+// Produces random "words" (actually integers) with values between 1 and 100.
 object KafkaWordCountProducer {
   def main(args: Array[String]) {
     if (args.length < 4) {
