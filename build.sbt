@@ -39,10 +39,12 @@ javacOptions ++= Seq(
 resolvers ++= Seq()
 
 val sparkVer = "2.1.0"
+//val kafkaVer = "0.8.2.2"
+val kafkaVer = "0.10.2.0"
 
 libraryDependencies ++= Seq(
   "com.github.scopt"  %% "scopt"                     % "3.5.0"   withSources(),
-  "org.apache.kafka"  %% "kafka"                     % "0.8.2.2" withSources(),
+  "org.apache.kafka"  %% "kafka"                     % kafkaVer  withSources(),
   "org.apache.spark"  %% "spark-mllib"               % sparkVer  withSources(),
   "org.apache.spark"  %% "spark-sql"                 % sparkVer  withSources(),
   "org.apache.spark"  %% "spark-streaming"           % sparkVer  withSources(),
