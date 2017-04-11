@@ -13,7 +13,7 @@ ZURL=localhost:2181
 clear
 # Each case below should be started in a separate console. Choose either 2a or 2b, 3a or 3b
 case "$1" in
-  0)  # Throw away old events
+  0)  # Throw away old topics, messages, etc
     rm -rf checkpoint /tmp/zookeeper
 
     # Start Zookeeper
@@ -33,8 +33,10 @@ case "$1" in
     ;;
 
   2a)  # send messages using Kafka
+    if [ $KHOME == /opt/kafka_2.11-0.8.2.2 ]; then
+      echo "Ignore this message: WARN Property topic is not valid (kafka.utils.VerifiableProperties)"
+    fi
     set -xv
-    # Kafka 0.8.x: Ignore "WARN Property topic is not valid (kafka.utils.VerifiableProperties)"
     $KHOME/bin/kafka-console-producer.sh --broker-list $KURL --topic $TOPIC
     set +xv
     ;;
