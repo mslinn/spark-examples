@@ -18,7 +18,7 @@
 // scalastyle:off println
 package org.apache.spark.examples.streaming
 
-import java.util.HashMap
+import java.util
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming._
@@ -48,15 +48,17 @@ object KafkaWordCount {
     StreamingExamples.setStreamingLogLevels()
 
     val Array(zkQuorum, group, topics, numThreads) = args
-    val sparkConf = new SparkConf().setAppName("KafkaWordCount").setMaster("local[*]")
+    val sparkConf = new SparkConf().setAppName("KafkaWordCount").setMaster("local[2]")
     val ssc: StreamingContext = new StreamingContext(sparkConf, Seconds(2))
     ssc.checkpoint("checkpoint")
 
     val topicMap: Map[String, Int] = topics.split(",").map((_, numThreads.toInt)).toMap
     val lines: DStream[String] = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
     val words: DStream[String] = lines.flatMap(_.split(" "))
-    val wordCounts: DStream[(String, Long)] = words.map(x => (x, 1L))
-      .reduceByKeyAndWindow(_ + _, _ - _, Minutes(10), Seconds(2), 2)
+    val wordCounts: DStream[(String, Long)] =
+      words
+        .map(x => (x, 1L))
+        .reduceByKeyAndWindow(_ + _, _ - _, Minutes(10), Seconds(2), 2)
     wordCounts.print()
 
     ssc.start()
@@ -66,36 +68,33 @@ object KafkaWordCount {
 
 // Produces some random words between 1 and 100.
 object KafkaWordCountProducer {
-
   def main(args: Array[String]) {
     if (args.length < 4) {
-      System.err.println("Usage: KafkaWordCountProducer <metadataBrokerList> <topic> " +
-        "<messagesPerSec> <wordsPerMessage>")
+      System.err.println("Usage: KafkaWordCountProducer <metadataBrokerList> <topic> <messagesPerSec> <wordsPerMessage>")
       System.exit(1)
     }
 
     val Array(brokers, topic, messagesPerSec, wordsPerMessage) = args
 
     // Zookeeper connection properties
-    val props = new HashMap[String, Object]()
+    val props = new util.HashMap[String, Object]()
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers)
-    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-      "org.apache.kafka.common.serialization.StringSerializer")
-    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-      "org.apache.kafka.common.serialization.StringSerializer")
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
 
     val producer = new KafkaProducer[String, String](props)
 
-    // Send some messages
-    while(true) {
-      (1 to messagesPerSec.toInt).foreach { messageNum =>
-        val str = (1 to wordsPerMessage.toInt).map(x => scala.util.Random.nextInt(10).toString)
+    // Send messages
+    while (true) {
+      (1 to messagesPerSec.toInt).foreach { _ =>
+        val str = (1 to wordsPerMessage.toInt)
+          .map(_ => scala.util.Random.nextInt(10).toString)
           .mkString(" ")
 
         val message = new ProducerRecord[String, String](topic, null, str)
         producer.send(message)
       }
-
+      println(s"Sent $messagesPerSec messages")
       Thread.sleep(1000)
     }
   }

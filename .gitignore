@@ -16,7 +16,7 @@ bin/*.class
 .target
 project/project
 project/target
-target*
+target/
 tmp
 *.tmp
 .history
