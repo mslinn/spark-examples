@@ -50,6 +50,8 @@ libraryDependencies ++= Seq(
   "org.apache.spark"  %% "spark-streaming"           % sparkVer  withSources(),
   "org.apache.spark"  %% "spark-streaming-flume"     % sparkVer  withSources(),
   "org.apache.spark"  %% "spark-streaming-kafka-0-8" % sparkVer  withSources(),
+  "org.postgresql"    %  "postgresql"                % "42.0.0",
+  "org.slf4j"         %  "slf4j-log4j12"             % "1.7.25",
   //
   "org.scalatest"     %% "scalatest" % "3.0.1"   % "test" withSources(),
   "junit"             %  "junit"     % "4.12"    % "test"

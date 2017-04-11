@@ -17,11 +17,9 @@
 package org.apache.spark.examples.sql
 
 import java.util.Properties
-
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 
 object SQLDataSourceExample {
-
   case class Person(name: String, age: Long)
 
   def main(args: Array[String]) {
@@ -29,6 +27,7 @@ object SQLDataSourceExample {
       .builder()
       .appName("Spark SQL data sources example")
       .config("spark.some.config.option", "some-value")
+      .master("local")
       .getOrCreate()
 
     runBasicDataSourceExample(spark)
@@ -42,15 +41,24 @@ object SQLDataSourceExample {
 
   private def runBasicDataSourceExample(spark: SparkSession): Unit = {
     // $example on:generic_load_save_functions$
-    val usersDF = spark.read.load("examples/src/main/resources/users.parquet")
-    usersDF.select("name", "favorite_color").write.save("namesAndFavColors.parquet")
+    val usersDF = spark.read.load("src/main/resources/users.parquet")
+    usersDF
+      .select("name", "favorite_color")
+      .write
+      .mode(SaveMode.Overwrite)
+      .save("namesAndFavColors.parquet")
     // $example off:generic_load_save_functions$
     // $example on:manual_load_options$
-    val peopleDF = spark.read.format("json").load("examples/src/main/resources/people.json")
-    peopleDF.select("name", "age").write.format("parquet").save("namesAndAges.parquet")
+    val peopleDF = spark.read.format("json").load("src/main/resources/people.json")
+    peopleDF
+      .select("name", "age")
+      .write
+      .format("parquet")
+      .mode(SaveMode.Overwrite)
+      .save("namesAndAges.parquet")
     // $example off:manual_load_options$
     // $example on:direct_sql$
-    val sqlDF = spark.sql("SELECT * FROM parquet.`examples/src/main/resources/users.parquet`")
+    val sqlDF = spark.sql("SELECT * FROM parquet.`src/main/resources/users.parquet`")
     // $example off:direct_sql$
   }
 
@@ -59,10 +67,13 @@ object SQLDataSourceExample {
     // Encoders for most common types are automatically provided by importing spark.implicits._
     import spark.implicits._
 
-    val peopleDF = spark.read.json("examples/src/main/resources/people.json")
+    val peopleDF = spark.read.json("src/main/resources/people.json")
 
     // DataFrames can be saved as Parquet files, maintaining the schema information
-    peopleDF.write.parquet("people.parquet")
+    peopleDF
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("people.parquet")
 
     // Read in the parquet file created above
     // Parquet files are self-describing so the schema is preserved
@@ -88,12 +99,12 @@ object SQLDataSourceExample {
 
     // Create a simple DataFrame, store into a partition directory
     val squaresDF = spark.sparkContext.makeRDD(1 to 5).map(i => (i, i * i)).toDF("value", "square")
-    squaresDF.write.parquet("data/test_table/key=1")
+    squaresDF.write.mode(SaveMode.Overwrite).parquet("data/test_table/key=1")
 
     // Create another DataFrame in a new partition directory,
     // adding a new column and dropping an existing column
     val cubesDF = spark.sparkContext.makeRDD(6 to 10).map(i => (i, i * i * i)).toDF("value", "cube")
-    cubesDF.write.parquet("data/test_table/key=2")
+    cubesDF.write.mode(SaveMode.Overwrite).parquet("data/test_table/key=2")
 
     // Read the partitioned table
     val mergedDF = spark.read.option("mergeSchema", "true").parquet("data/test_table")
@@ -117,7 +128,7 @@ object SQLDataSourceExample {
 
     // A JSON dataset is pointed to by path.
     // The path can be either a single text file or a directory storing text files
-    val path = "examples/src/main/resources/people.json"
+    val path = "src/main/resources/people.json"
     val peopleDF = spark.read.json(path)
 
     // The inferred schema can be visualized using the printSchema() method
@@ -140,9 +151,8 @@ object SQLDataSourceExample {
 
     // Alternatively, a DataFrame can be created for a JSON dataset represented by
     // an Dataset[String] storing one JSON object per string
-    val otherPeopleDataset = spark.createDataset(
-      """{"name":"Yin","address":{"city":"Columbus","state":"Ohio"}}""" :: Nil)
-    val otherPeople = spark.read.json(otherPeopleDataset)
+    val otherPeopleDataset: Dataset[String] = spark.createDataset(Seq("""{"name":"Yin","address":{"city":"Columbus","state":"Ohio"}}"""))
+    val otherPeople: DataFrame = spark.read.json(otherPeopleDataset.rdd)
     otherPeople.show()
     // +---------------+----+
     // |        address|name|
@@ -160,23 +170,24 @@ object SQLDataSourceExample {
       .format("jdbc")
       .option("url", "jdbc:postgresql:dbserver")
       .option("dbtable", "schema.tablename")
-      .option("user", "username")
-      .option("password", "password")
+      .option("user", "postgres")
+      .option("password", sys.env("PGPASSWORD"))
       .load()
 
     val connectionProperties = new Properties()
-    connectionProperties.put("user", "username")
-    connectionProperties.put("password", "password")
+    connectionProperties.put("user", "postgres")
+    connectionProperties.put("password", sys.env("PGPASSWORD"))
     val jdbcDF2 = spark.read
       .jdbc("jdbc:postgresql:dbserver", "schema.tablename", connectionProperties)
 
+    // todo move write before read
     // Saving data to a JDBC source
     jdbcDF.write
       .format("jdbc")
       .option("url", "jdbc:postgresql:dbserver")
       .option("dbtable", "schema.tablename")
-      .option("user", "username")
-      .option("password", "password")
+      .option("user", "postgres")
+      .option("password", sys.env("PGPASSWORD"))
       .save()
 
     jdbcDF2.write
