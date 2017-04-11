@@ -104,6 +104,5 @@ object KafkaWordCountProducer {
       Thread.sleep(1000)
     }
   }
-
 }
 // scalastyle:on println

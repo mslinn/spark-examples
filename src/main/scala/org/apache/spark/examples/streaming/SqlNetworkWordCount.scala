@@ -47,7 +47,7 @@ object SqlNetworkWordCount {
     StreamingExamples.setStreamingLogLevels()
 
     // Create the context with a 2 second batch size
-    val sparkConf = new SparkConf().setAppName("SqlNetworkWordCount")
+    val sparkConf = new SparkConf().setAppName("SqlNetworkWordCount").setMaster("local[2]")
     val ssc = new StreamingContext(sparkConf, Seconds(2))
 
     // Create a socket stream on target ip:port and count the
@@ -88,8 +88,7 @@ case class Record(word: String)
 
 /** Lazily instantiated singleton instance of SparkSession */
 object SparkSessionSingleton {
-
-  @transient  private var instance: SparkSession = _
+  @transient private var instance: SparkSession = _
 
   def getInstance(sparkConf: SparkConf): SparkSession = {
     if (instance == null) {
